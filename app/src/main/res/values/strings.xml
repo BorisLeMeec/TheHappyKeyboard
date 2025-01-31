@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">TheHappyKeyboard</string>
+    <string name="the_happy_keyboard">TheHappyKeyboard</string>
+    <string name="switch_keyboard">Go back to your keyboard</string>
+    <string name="select_media">Select media</string>
+    <string name="gifs">gifs</string>
+    <string name="images">images</string>
+    <string name="videos">video</string>
+</resources>
