@@ -6,4 +6,22 @@
     <string name="gifs">gifs</string>
     <string name="images">images</string>
     <string name="videos">video</string>
+    <!-- Other string resources -->
+    <string name="delete_confirmation_message">Are you sure you want to delete this media?</string>
+    <string name="delete_confirmation">Delete media</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="validate_tag">Validate tag</string>
+    <string name="enter_tag">Enter tag</string>
+    <string name="no_tags_defined_yet_add_some_by_pressing_the_button_below">No tags defined yet, add some by pressing the + button below</string>
+    <string name="tag">Tag</string>
+    <string name="search">Search</string>
+
+    <!-- <string name="select_media">Select Media</string> -->
+
+    <!-- <string name="images">Images</string> -->
+
+    <!-- <string name="gifs">Gifs</string> -->
+
+    <!-- <string name="videos">Videos</string> -->
 </resources>

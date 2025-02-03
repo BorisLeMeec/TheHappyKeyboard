@@ -10,9 +10,14 @@ material = "1.10.0"
 activity = "1.8.0"
 constraintlayout = "2.1.4"
 glide = "4.16.0"
-compiler = "4.16.0"
 androidGifDrawable = "1.2.29"
 exoplayer = "2.18.7"
+flexboxVersion = "3.0.0"
+roomRuntime = "2.5.1"
+roomCompiler = "2.5.1"
+roomKtx = "2.5.1"
+lifecycleRuntimeKtx = "2.8.7"
+ksp = "1.9.0-1.0.13"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -24,11 +29,16 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "compiler" }
 android-gif-drawable = { group = "pl.droidsonroids.gif", name = "android-gif-drawable", version.ref = "androidGifDrawable" }
 exoplayer = { group = "com.google.android.exoplayer", name = "exoplayer", version.ref = "exoplayer" }
+google-flexbox = { group = "com.google.android.flexbox", name = "flexbox", version.ref = "flexboxVersion" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 
 [plugins]
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 

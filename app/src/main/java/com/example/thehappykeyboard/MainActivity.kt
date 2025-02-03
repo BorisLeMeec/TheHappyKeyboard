@@ -21,7 +21,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
 
     companion object {
         private const val REQUEST_READ_EXTERNAL_STORAGE = 1
@@ -80,10 +80,40 @@ class MainActivity : AppCompatActivity() {
 
         mediaRecyclerView = findViewById(R.id.mediaRecyclerView)
         mediaRecyclerView.layoutManager = GridLayoutManager(this, NUMBER_OF_COLUMNS)
-        mediaAdapter = MediaAdapter(mediaList, this,null)
+        mediaAdapter = MediaAdapter(mediaList, this,this)
         mediaRecyclerView.adapter = mediaAdapter
 
         loadMedias()
+
+        // Handle the shared intent
+        handleSharedIntent(intent)
+    }
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        handleSharedIntent(intent)
+    }
+
+    private fun handleSharedIntent(intent: Intent?) {
+        if (intent?.action == Intent.ACTION_SEND || intent?.action == Intent.ACTION_SEND_MULTIPLE) {
+            if (intent.type?.startsWith("image/") == true) {
+                val imageUri: Uri? = intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                if (imageUri != null) {
+                    // Handle the shared image URI
+                    handleSharedImage(imageUri)
+                } else {
+                    val imageUris: ArrayList<Uri>? = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
+                    if (imageUris != null) {
+                        for (uri in imageUris) {
+                            handleSharedImage(uri)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleSharedImage(imageUri: Uri) {
+        copyMediaToAppFolder(imageUri)
     }
 
     private fun checkPermissionsAndSelectMedia() {
@@ -136,6 +166,9 @@ class MainActivity : AppCompatActivity() {
 
             Toast.makeText(this, "Media copied to app folder", Toast.LENGTH_SHORT).show()
             loadMedias()
+            val intent = Intent(this, MediaViewActivity::class.java)
+            intent.putExtra(MediaViewActivity.EXTRA_MEDIA_PATH, gifFile.absolutePath)
+            startActivity(intent)
         } catch (e: IOException) {
             Log.e("MainActivity", "Error copying Media", e)
             Toast.makeText(this, "Error copying Media", Toast.LENGTH_SHORT).show()
@@ -178,5 +211,11 @@ class MainActivity : AppCompatActivity() {
         }
         mediaList.sortByDescending { it.file.lastModified() }
         mediaAdapter.notifyDataSetChanged()
+    }
+
+    override fun onMediaClick(mediaFile: File) {
+        val intent = Intent(this, MediaViewActivity::class.java)
+        intent.putExtra(MediaViewActivity.EXTRA_MEDIA_PATH, mediaFile.absolutePath)
+        startActivity(intent)
     }
 }

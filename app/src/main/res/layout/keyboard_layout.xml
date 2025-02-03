@@ -4,6 +4,16 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
+
+    <EditText
+        android:id="@+id/searchEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/search"
+        android:textColor="@android:color/white"
+        android:textColorHint="@android:color/white"/>
+
+
     <LinearLayout
         android:id="@+id/filterLayout"
         android:layout_width="match_parent"
@@ -16,26 +26,32 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
-            android:text="@string/images" />
+            android:text="@string/images"
+            android:textColor="@android:color/white"/>
 
         <CheckBox
             android:id="@+id/gifCheckBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
-            android:text="@string/gifs" />
+            android:text="@string/gifs"
+            android:textColor="@android:color/white"/>
 
         <CheckBox
             android:id="@+id/videoCheckBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
-            android:text="@string/videos" />
+            android:text="@string/videos"
+            android:textColor="@android:color/white"/>
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/mediaRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+
+    <include layout="@layout/keyboard_qwerty" />
+
 
 </LinearLayout>

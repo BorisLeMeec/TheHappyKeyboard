@@ -22,7 +22,7 @@ class MediaAdapter(
     RecyclerView.Adapter<MediaAdapter.MediaViewHolder>() {
 
     interface OnMediaClickListener {
-        fun onMediaClick(gifFile: File)
+        fun onMediaClick(mediaFile: File)
     }
 
     class MediaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -87,7 +87,7 @@ class MediaAdapter(
         } else {
             holder.deleteMediaButton?.visibility = View.GONE
         }
-        holder.mediaImageView.setOnClickListener {
+        holder.itemView.setOnClickListener {
             Log.d("MediaAdapter", "Item clicked: ${file.name}")
             listener?.onMediaClick(file)
         }
@@ -95,8 +95,8 @@ class MediaAdapter(
 
     private fun showDeleteConfirmationDialog(context: Context, mediaItem: MediaItem, mainActivity: MainActivity) {
         AlertDialog.Builder(context)
-            .setTitle("Delete GIF")
-            .setMessage("Are you sure you want to delete this media?")
+            .setTitle(R.string.delete_confirmation)
+            .setMessage(R.string.delete_confirmation_message)
             .setPositiveButton("Delete") { dialog, _ ->
                 deleteMedia(mediaItem, mainActivity)
                 dialog.dismiss()

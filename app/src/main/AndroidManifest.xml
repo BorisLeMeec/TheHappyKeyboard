@@ -22,14 +22,29 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
         </activity>
+        <activity
+            android:name=".MediaViewActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustPan" />
 
         <service
             android:name=".TheHappyKeyboardService"
             android:exported="true"
             android:label="@string/the_happy_keyboard"
-            android:permission="android.permission.BIND_INPUT_METHOD">
-            <intent-filter>
+            android:permission="android.permission.BIND_INPUT_METHOD"
+            android:theme="@style/KeyboardTheme">
+        <intent-filter>
                 <action android:name="android.view.InputMethod" />
             </intent-filter>
 
