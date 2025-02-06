@@ -48,7 +48,6 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <Button android:id="@+id/key_shift" android:text="SHIFT" style="@style/key_button" android:layout_weight="1"/>
         <Button android:id="@+id/key_z" android:text="z" style="@style/key_button"/>
         <Button android:id="@+id/key_x" android:text="x" style="@style/key_button"/>
         <Button android:id="@+id/key_c" android:text="c" style="@style/key_button"/>
@@ -56,7 +55,14 @@
         <Button android:id="@+id/key_b" android:text="b" style="@style/key_button"/>
         <Button android:id="@+id/key_n" android:text="n" style="@style/key_button"/>
         <Button android:id="@+id/key_m" android:text="m" style="@style/key_button"/>
-        <Button android:id="@+id/key_del" android:text="DEL" style="@style/key_button" android:layout_weight="1"/>
+        <Button
+            android:id="@+id/key_del"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:drawableEnd="@drawable/delete_icon_layer"
+            android:drawablePadding="8dp"
+            android:text="" />
     </LinearLayout>
 
     <!-- Row 4 -->
@@ -65,5 +71,10 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
         <Button android:id="@+id/key_space" android:text="SPACE" style="@style/key_button" android:layout_weight="1"/>
+        <Button
+            android:id="@+id/key_done"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="done" />
     </LinearLayout>
 </LinearLayout>

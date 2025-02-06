@@ -1,10 +1,8 @@
 package com.example.thehappykeyboard
 
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -23,11 +21,6 @@ import java.io.File
 import kotlin.text.isNotEmpty
 import kotlin.text.trim
 import com.google.android.flexbox.FlexboxLayout
-import java.io.FileOutputStream
-import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Date
-import kotlin.text.format
 
 class MediaViewActivity : AppCompatActivity() {
 
@@ -38,7 +31,6 @@ class MediaViewActivity : AppCompatActivity() {
     private lateinit var mediaImageView: ImageView
     private lateinit var noTagsTextView: TextView
     private lateinit var addTagButton: Button
-    private lateinit var tagsAdapter: TagsAdapter
     private val tagsList = mutableListOf<String>()
     private lateinit var addTagLayout: LinearLayout
     private lateinit var tagEditText: EditText
@@ -116,7 +108,7 @@ class MediaViewActivity : AppCompatActivity() {
         addTagLayout.visibility = View.VISIBLE
         addTagButton.visibility = View.GONE
         tagEditText.requestFocus()
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.showSoftInput(tagEditText, InputMethodManager.SHOW_IMPLICIT)
     }
 

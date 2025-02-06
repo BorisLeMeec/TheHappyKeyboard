@@ -16,7 +16,7 @@ import pl.droidsonroids.gif.GifImageView
 import java.io.File
 
 class MediaAdapter(
-    private val mediaList: List<MediaItem>,
+    private var mediaList: List<MediaItem>,
     private val mainActivity: MainActivity?,
     private val listener: OnMediaClickListener?) :
     RecyclerView.Adapter<MediaAdapter.MediaViewHolder>() {
@@ -111,6 +111,11 @@ class MediaAdapter(
         if (mediaItem.file.delete()) {
             mainActivity.loadMedias()
         }
+    }
+
+    fun updateData(newMediaList: List<MediaItem>) {
+        mediaList = newMediaList
+        notifyDataSetChanged()
     }
 
     override fun getItemCount() = mediaList.size

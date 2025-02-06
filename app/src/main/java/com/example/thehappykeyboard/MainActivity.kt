@@ -7,19 +7,29 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
+import kotlin.collections.addAll
+import kotlin.text.clear
 
 class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
 
@@ -38,6 +48,7 @@ class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
     private lateinit var gifCheckBox: CheckBox
     private lateinit var imageCheckBox: CheckBox
     private lateinit var videoCheckBox: CheckBox
+    private lateinit var db: AppDatabase
 
     private val mediaList = mutableListOf<MediaItem>()
 
@@ -54,6 +65,8 @@ class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        db = AppDatabase.getDatabase(this)
+
         selectMediaButton = findViewById(R.id.selectMediaButton)
         selectMediaButton.setOnClickListener {
             checkPermissionsAndSelectMedia()
@@ -61,6 +74,9 @@ class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
         gifCheckBox = findViewById(R.id.gifCheckBox)
         imageCheckBox = findViewById(R.id.imageCheckBox)
         videoCheckBox = findViewById(R.id.videoCheckBox)
+
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
         selectMediaButton.setOnClickListener {
             selectMedia()
@@ -91,6 +107,22 @@ class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         handleSharedIntent(intent)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     private fun handleSharedIntent(intent: Intent?) {
@@ -191,26 +223,38 @@ class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
     }
 
     fun loadMedias() {
-        val mediaFolder = File(filesDir, MEDIA_FOLDER_NAME)
-        mediaList.clear()
-        if (mediaFolder.exists() && mediaFolder.isDirectory) {
-            val mediaFiles = mediaFolder.listFiles { file ->
-                file.isFile && (file.name.endsWith(".gif") || file.name.endsWith(".jpg") || file.name.endsWith(".jpeg") || file.name.endsWith(".png") || file.name.endsWith(".mp4"))
+        lifecycleScope.launch(Dispatchers.IO) {
+            val mediaFolder = File(filesDir, MEDIA_FOLDER_NAME)
+            val newMediaList = mutableListOf<MediaItem>()
+            if (mediaFolder.exists() && mediaFolder.isDirectory) {
+                val mediaFiles = mediaFolder.listFiles { file ->
+                    file.isFile && (file.name.endsWith(".gif") || file.name.endsWith(".jpg") || file.name.endsWith(
+                        ".jpeg"
+                    ) || file.name.endsWith(".png") || file.name.endsWith(".mp4"))
+                }
+                mediaFiles?.forEach { file ->
+                    val type = when {
+                        file.name.endsWith(".gif") -> TYPE_GIF
+                        file.name.endsWith(".jpg") || file.name.endsWith(".jpeg") || file.name.endsWith(
+                            ".png"
+                        ) -> TYPE_IMAGE
+
+                        file.name.endsWith(".mp4") -> TYPE_VIDEO
+                        else -> ""
+                    }
+                    if ((imageCheckBox.isChecked && type == TYPE_IMAGE) || (gifCheckBox.isChecked && type == TYPE_GIF) || (videoCheckBox.isChecked && type == TYPE_VIDEO)) {
+                        val tags = db.tagDao().getTagsForMedia(file.path)
+                        newMediaList.add(MediaItem(file.name, file, type, tags))
+                    }
+                }
             }
-            mediaFiles?.forEach { file ->
-                val type = when {
-                    file.name.endsWith(".gif") -> TYPE_GIF
-                    file.name.endsWith(".jpg") || file.name.endsWith(".jpeg") || file.name.endsWith(".png") -> TYPE_IMAGE
-                    file.name.endsWith(".mp4") -> TYPE_VIDEO
-                    else -> ""
-                }
-                if ((imageCheckBox.isChecked && type == TYPE_IMAGE) || (gifCheckBox.isChecked && type == TYPE_GIF) || (videoCheckBox.isChecked && type == TYPE_VIDEO)) {
-                    mediaList.add(MediaItem(file.name, file, type))
-                }
+            newMediaList.sortByDescending { it.file.lastModified() }
+            withContext(Dispatchers.Main) {
+                mediaList.clear()
+                mediaList.addAll(newMediaList)
+                mediaAdapter.notifyDataSetChanged()
             }
         }
-        mediaList.sortByDescending { it.file.lastModified() }
-        mediaAdapter.notifyDataSetChanged()
     }
 
     override fun onMediaClick(mediaFile: File) {

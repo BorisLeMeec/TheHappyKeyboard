@@ -5,7 +5,11 @@ import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.net.Uri
 import android.os.Build
+import android.text.Editable
+import android.text.InputType
+import android.text.TextWatcher
 import android.util.Log
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -20,12 +24,17 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import android.widget.TextView
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import kotlin.collections.sortByDescending
-
 
 class TheHappyKeyboardService : InputMethodService(), MediaAdapter.OnMediaClickListener {
 
@@ -46,7 +55,16 @@ class TheHappyKeyboardService : InputMethodService(), MediaAdapter.OnMediaClickL
     private lateinit var videoCheckBox: CheckBox
     private lateinit var keyboardLayout: LinearLayout
     private lateinit var searchEditText: EditText
-    private var originalInputConnection: InputConnection? = null
+    private lateinit var db: AppDatabase
+
+    private var internalInputConnection: InputConnection? = null
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    override fun onCreate() {
+        super.onCreate()
+
+        db = AppDatabase.getDatabase(this)
+    }
 
     override fun onCreateInputView(): View {
         // Inflate the keyboard layout
@@ -83,7 +101,9 @@ class TheHappyKeyboardService : InputMethodService(), MediaAdapter.OnMediaClickL
 
         keyboardLayout = keyboardViewInflated.findViewById(R.id.keyboardLayout)
 
-        searchEditText = keyboardViewInflated.findViewById<EditText>(R.id.searchEditText)
+        searchEditText = keyboardViewInflated.findViewById(R.id.searchEditText)
+        searchEditText.inputType = InputType.TYPE_CLASS_TEXT
+        internalInputConnection = searchEditText.onCreateInputConnection(EditorInfo())
         searchEditText.setOnClickListener {
             keyboardLayout.visibility = View.VISIBLE
         }
@@ -94,11 +114,31 @@ class TheHappyKeyboardService : InputMethodService(), MediaAdapter.OnMediaClickL
             }
             false
         })
+        searchEditText.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                switchToSearchInput()
+            } else {
+                closeKeyboardAndReturnToOriginalInput()
+            }
+        }
+
         searchEditText.setOnClickListener {
             keyboardLayout.visibility = View.VISIBLE
         }
-        keyboardViewInflated.setOnClickListener {
-            keyboardLayout.visibility = View.GONE
+        searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                filterMediaItems(s.toString())
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+
+        val doneButton = keyboardViewInflated.findViewById<Button>(R.id.key_done)
+        doneButton.setOnClickListener {
+            closeKeyboardAndReturnToOriginalInput()
         }
 
         // Set click listeners for the keyboard buttons
@@ -136,13 +176,22 @@ class TheHappyKeyboardService : InputMethodService(), MediaAdapter.OnMediaClickL
     }
 
     private fun handleKeyPress(text: String) {
-        val inputConnection = currentInputConnection
-        inputConnection?.commitText(text, 1)
+        internalInputConnection?.commitText(text, 1)
     }
 
     private fun handleDeletePress() {
-        val inputConnection = currentInputConnection
-        inputConnection?.deleteSurroundingText(1, 0)
+        internalInputConnection?.deleteSurroundingText(1, 0)
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (keyboardLayout.visibility == View.VISIBLE) {
+                keyboardLayout.visibility = View.GONE
+                return true
+            }
+            return super.onKeyDown(keyCode, event)
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     private fun showInputMethodPicker(context: Context) {
@@ -151,26 +200,38 @@ class TheHappyKeyboardService : InputMethodService(), MediaAdapter.OnMediaClickL
     }
 
     private fun loadMedias() {
-        val mediaFolder = File(filesDir, MEDIA_FOLDER_NAME)
-        mediaList.clear()
-        if (mediaFolder.exists() && mediaFolder.isDirectory) {
-            val mediaFiles = mediaFolder.listFiles { file ->
-                file.isFile && (file.name.endsWith(".gif") || file.name.endsWith(".jpg") || file.name.endsWith(".jpeg") || file.name.endsWith(".png") || file.name.endsWith(".mp4"))
+        serviceScope.launch(Dispatchers.IO) {
+            val mediaFolder = File(filesDir, MEDIA_FOLDER_NAME)
+            val newMediaList = mutableListOf<MediaItem>()
+            if (mediaFolder.exists() && mediaFolder.isDirectory) {
+                val mediaFiles = mediaFolder.listFiles { file ->
+                    file.isFile && (file.name.endsWith(".gif") || file.name.endsWith(".jpg") || file.name.endsWith(
+                        ".jpeg"
+                    ) || file.name.endsWith(".png") || file.name.endsWith(".mp4"))
+                }
+                mediaFiles?.forEach { file ->
+                    val type = when {
+                        file.name.endsWith(".gif") -> TYPE_GIF
+                        file.name.endsWith(".jpg") || file.name.endsWith(".jpeg") || file.name.endsWith(
+                            ".png"
+                        ) -> TYPE_IMAGE
+
+                        file.name.endsWith(".mp4") -> TYPE_VIDEO
+                        else -> ""
+                    }
+                    if ((imageCheckBox.isChecked && type == TYPE_IMAGE) || (gifCheckBox.isChecked && type == TYPE_GIF) || (videoCheckBox.isChecked && type == TYPE_VIDEO)) {
+                        val tags = db.tagDao().getTagsForMedia(file.path)
+                        newMediaList.add(MediaItem(file.name, file, type, tags))
+                    }
+                }
             }
-            mediaFiles?.forEach { file ->
-                val type = when {
-                    file.name.endsWith(".gif") -> TYPE_GIF
-                    file.name.endsWith(".jpg") || file.name.endsWith(".jpeg") || file.name.endsWith(".png") -> TYPE_IMAGE
-                    file.name.endsWith(".mp4") -> TYPE_VIDEO
-                    else -> ""
-                }
-                if ((imageCheckBox.isChecked && type == TYPE_IMAGE) || (gifCheckBox.isChecked && type == TYPE_GIF) || (videoCheckBox.isChecked && type == TYPE_VIDEO)) {
-                    mediaList.add(MediaItem(file.name, file, type))
-                }
+            newMediaList.sortByDescending { it.file.lastModified() }
+            withContext(Dispatchers.Main) {
+                mediaList.clear()
+                mediaList.addAll(newMediaList)
+                mediaAdapter.notifyDataSetChanged()
             }
         }
-        mediaList.sortByDescending { it.file.lastModified() }
-        mediaAdapter.notifyDataSetChanged()
     }
 
     @RequiresApi(Build.VERSION_CODES.N_MR1)
@@ -207,5 +268,36 @@ class TheHappyKeyboardService : InputMethodService(), MediaAdapter.OnMediaClickL
                 Toast.makeText(this, "Error sending media", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun filterMediaItems(query: String) {
+        serviceScope.launch(Dispatchers.Default) {
+            val filteredItems = if (query.isBlank()) {
+                mediaList
+            } else {
+                mediaList.filter { item ->
+                    item.tags.any { tag ->
+                        tag.tagName.contains(query, ignoreCase = true)
+                    } || item.name.contains(query, ignoreCase = true) || item.file.name.contains(query, ignoreCase = true)
+                }
+            }
+            withContext(Dispatchers.Main) {
+                mediaAdapter.updateData(filteredItems)
+            }
+        }
+    }
+
+    private fun switchToSearchInput() {
+        keyboardLayout.visibility = View.VISIBLE
+    }
+
+    private fun closeKeyboardAndReturnToOriginalInput() {
+        // Hide the keyboard
+        keyboardLayout.visibility = View.GONE
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
     }
 }

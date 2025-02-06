@@ -37,6 +37,8 @@
             android:name=".MediaViewActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustPan" />
+        <activity android:name=".SettingsActivity"
+            android:exported="false"/>
 
         <service
             android:name=".TheHappyKeyboardService"
