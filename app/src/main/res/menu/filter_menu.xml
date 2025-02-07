@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_gif"
+        android:title="@string/gifs"
+        android:checkable="true"
+        android:checked="true" />
+    <item
+        android:id="@+id/menu_image"
+        android:title="@string/images"
+        android:checkable="true"
+        android:checked="true" />
+    <item
+        android:id="@+id/menu_video"
+        android:title="@string/videos"
+        android:checkable="true"
+        android:checked="true" />
+</menu>

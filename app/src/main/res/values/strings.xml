@@ -18,6 +18,9 @@
     <string name="search">Search</string>
     <string name="settings">settings</string>
     <string name="ime_enabled">Is the keyboard enabled</string>
+    <string name="add_media">add medias</string>
+    <string name="search_hint">Search...</string>
+    <string name="filter">Filter</string>
 
     <!-- <string name="select_media">Select Media</string> -->
 

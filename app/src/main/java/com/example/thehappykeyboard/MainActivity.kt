@@ -9,9 +9,11 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Button
+import android.view.View
 import android.widget.CheckBox
-import android.widget.ImageView
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -21,6 +23,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -28,8 +31,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
-import kotlin.collections.addAll
-import kotlin.text.clear
 
 class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
 
@@ -42,13 +43,16 @@ class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
         private const val TYPE_VIDEO = "video"
     }
 
-    private lateinit var selectMediaButton: Button
+    private lateinit var addMediaFab: FloatingActionButton
     private lateinit var mediaRecyclerView: RecyclerView
     private lateinit var mediaAdapter: MediaAdapter
-    private lateinit var gifCheckBox: CheckBox
-    private lateinit var imageCheckBox: CheckBox
-    private lateinit var videoCheckBox: CheckBox
+    private lateinit var filterButton: ImageButton
+    private lateinit var searchEditText: EditText
     private lateinit var db: AppDatabase
+
+    private var isGifChecked = true
+    private var isImageChecked = true
+    private var isVideoChecked = true
 
     private val mediaList = mutableListOf<MediaItem>()
 
@@ -67,32 +71,19 @@ class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
 
         db = AppDatabase.getDatabase(this)
 
-        selectMediaButton = findViewById(R.id.selectMediaButton)
-        selectMediaButton.setOnClickListener {
+        addMediaFab = findViewById(R.id.addMediaFab)
+        addMediaFab.setOnClickListener {
             checkPermissionsAndSelectMedia()
         }
-        gifCheckBox = findViewById(R.id.gifCheckBox)
-        imageCheckBox = findViewById(R.id.imageCheckBox)
-        videoCheckBox = findViewById(R.id.videoCheckBox)
+
+        filterButton = findViewById(R.id.filterButton)
+        searchEditText = findViewById(R.id.searchEditText)
+        filterButton.setOnClickListener {
+            showFilterPopup(it)
+        }
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-
-        selectMediaButton.setOnClickListener {
-            selectMedia()
-        }
-
-        gifCheckBox.setOnCheckedChangeListener { _, _ ->
-            loadMedias()
-        }
-
-        imageCheckBox.setOnCheckedChangeListener { _, _ ->
-            loadMedias()
-        }
-
-        videoCheckBox.setOnCheckedChangeListener { _, _ ->
-            loadMedias()
-        }
 
         mediaRecyclerView = findViewById(R.id.mediaRecyclerView)
         mediaRecyclerView.layoutManager = GridLayoutManager(this, NUMBER_OF_COLUMNS)
@@ -222,6 +213,41 @@ class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
         }
     }
 
+    private fun showFilterPopup(view: View) {
+        val popup = PopupMenu(this, view)
+        popup.menuInflater.inflate(R.menu.filter_menu, popup.menu)
+
+        // Set initial checked states
+        popup.menu.findItem(R.id.menu_gif).isChecked = isGifChecked
+        popup.menu.findItem(R.id.menu_image).isChecked = isImageChecked
+        popup.menu.findItem(R.id.menu_video).isChecked = isVideoChecked
+
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.menu_gif -> {
+                    isGifChecked = !isGifChecked
+                    item.isChecked = isGifChecked
+                }
+                R.id.menu_image -> {
+                    isImageChecked = !isImageChecked
+                    item.isChecked = isImageChecked
+                }
+                R.id.menu_video -> {
+                    isVideoChecked = !isVideoChecked
+                    item.isChecked = isVideoChecked
+                }
+            }
+            loadMedias()
+            false
+        }
+
+        popup.setOnDismissListener {
+            // This listener is called when the popup is dismissed
+        }
+
+        popup.show()
+    }
+
     fun loadMedias() {
         lifecycleScope.launch(Dispatchers.IO) {
             val mediaFolder = File(filesDir, MEDIA_FOLDER_NAME)
@@ -242,7 +268,7 @@ class MainActivity : AppCompatActivity(), MediaAdapter.OnMediaClickListener {
                         file.name.endsWith(".mp4") -> TYPE_VIDEO
                         else -> ""
                     }
-                    if ((imageCheckBox.isChecked && type == TYPE_IMAGE) || (gifCheckBox.isChecked && type == TYPE_GIF) || (videoCheckBox.isChecked && type == TYPE_VIDEO)) {
+                    if ((isImageChecked && type == TYPE_IMAGE) || (isGifChecked && type == TYPE_GIF) || (isVideoChecked && type == TYPE_VIDEO)) {
                         val tags = db.tagDao().getTagsForMedia(file.path)
                         newMediaList.add(MediaItem(file.name, file, type, tags))
                     }
