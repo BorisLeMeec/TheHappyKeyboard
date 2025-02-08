@@ -30,8 +30,6 @@ class MediaAdapter(
         val gifImageView: GifImageView = itemView.findViewById(R.id.gifImageView)
         val videoImageView: ImageView = itemView.findViewById(R.id.videoImageView)
         val playIcon: ImageView = itemView.findViewById(R.id.playIcon)
-        val deleteMediaButton: ImageView? = itemView.findViewById(R.id.deleteMediaButton)
-
         init {
             itemView.isClickable = true
         }
@@ -79,14 +77,6 @@ class MediaAdapter(
             }
         }
 
-        if (mainActivity != null) {
-            holder.deleteMediaButton?.visibility = View.VISIBLE
-            holder.deleteMediaButton?.setOnClickListener {
-                showDeleteConfirmationDialog(holder.itemView.context, currentItem, mainActivity)
-            }
-        } else {
-            holder.deleteMediaButton?.visibility = View.GONE
-        }
         holder.itemView.setOnClickListener {
             Log.d("MediaAdapter", "Item clicked: ${file.name}")
             listener?.onMediaClick(file)
